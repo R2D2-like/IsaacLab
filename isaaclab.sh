@@ -44,5 +44,16 @@ if [ -d "$ISAACLAB_PATH/_isaac_sim" ]; then
     fi
 fi
 
+# Install custom editable packages when running with -i/--install.
+for arg in "$@"; do
+    case "$arg" in
+        -i|--install)
+            "$python_exe" -m pip install -e \
+                "$ISAACLAB_PATH/source/custom/rsl_rl"
+            break
+            ;;
+    esac
+done
+
 # Execute CLI.
 exec "$python_exe" -c "from isaaclab.cli import cli; cli()" "$@"

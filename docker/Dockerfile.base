@@ -107,6 +107,117 @@ RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
 # HACK: Remove install of quadprog dependency
 RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip uninstall -y quadprog
 
+# Install CUDA 12.8 from the NVIDIA network repository.
+RUN set -euo pipefail && \
+    . /etc/os-release && \
+    case "${ID}:${VERSION_ID}" in \
+        ubuntu:20.04) cuda_repo="ubuntu2004" ;; \
+        ubuntu:22.04) cuda_repo="ubuntu2204" ;; \
+        ubuntu:24.04) cuda_repo="ubuntu2404" ;; \
+        *) echo "Unsupported OS: ${ID} ${VERSION_ID}" >&2; exit 1 ;; \
+    esac && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget \
+        ca-certificates \
+        gnupg && \
+    wget -q \
+        "https://developer.download.nvidia.com/compute/cuda/repos/${cuda_repo}/x86_64/cuda-keyring_1.1-1_all.deb" \
+        -O /tmp/cuda-keyring.deb && \
+    dpkg -i /tmp/cuda-keyring.deb && \
+    rm -f /tmp/cuda-keyring.deb && \
+    wget -q \
+        "https://developer.download.nvidia.com/compute/cuda/repos/${cuda_repo}/x86_64/cuda-${cuda_repo}.pin" \
+        -O /etc/apt/preferences.d/cuda-repository-pin-600 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cuda-toolkit-12-8 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install cuRobo from source (pinned commit); needs CUDA env and Torch
+
+ENV CUDA_HOME=/usr/local/cuda-12.8
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+
+RUN test -x "${CUDA_HOME}/bin/nvcc" && \
+    "${CUDA_HOME}/bin/nvcc" --version
+
+# PyTorch 2.7.0 + CUDA 12.x requires cuSPARSELt.
+# Isaac Sim's Python environment may not include libcusparseLt.so.0 by default.
+RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install nvidia-cusparselt-cu12
+
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${ISAACSIM_ROOT_PATH}/kit/python/lib/python3.12/site-packages/nvidia/cusparselt/lib:${LD_LIBRARY_PATH}
+
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -c "import torch; print(torch.__version__)"
+
+RUN CUDA_HOME=${CUDA_HOME} \
+    TORCH_CUDA_ARCH_LIST='8.0;8.6;8.9;9.0;10.0;12.0+PTX' \
+    FORCE_CUDA=1 \
+    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --no-build-isolation \
+    nvidia-curobo@git+https://github.com/R2D2-like/curobo.git@data_gen
+
+############################################################
+# Motion Policy Networks deps
+############################################################
+RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+${ISAACLAB_PATH}/isaaclab.sh -p -m pip install \
+pytorch_lightning \
+h5py \
+trimesh \
+wandb \
+ipython \
+pybullet \
+pyquaternion \
+geometrout==0.0.3.4 \
+tqdm \
+urchin==0.0.24 \
+yourdfpy \
+shapely \
+rtree \
+triangle \
+termcolor \
+meshcat \
+kornia
+
+############################################################
+# Build tools required by ikfast-pybind / pointnet2_ops
+############################################################
+RUN --mount=type=cache,target=/var/cache/apt \
+apt-get update && apt-get install -y --no-install-recommends \
+  build-essential \
+  ninja-build \
+  cmake \
+&& rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --no-deps \
+  git+https://github.com/fishbotics/robofin.git@v0.0.1 \
+  git+https://github.com/fishbotics/atob@v0.0.1
+
+############################################################
+# pointnet2_ops (patch compute_37 for CUDA 12.8)
+############################################################
+RUN --mount=type=cache,target=/root/.cache/pip \
+set -euxo pipefail; \
+cd /tmp; rm -rf pointnet2_ops; \
+git clone --depth 1 --branch v3.2.0 https://github.com/fishbotics/pointnet2_ops.git; \
+cd pointnet2_ops; \
+\
+# setup.py: stop forcing sm_37
+sed -i 's/os\.environ\["TORCH_CUDA_ARCH_LIST"\] = .*/os.environ.setdefault("TORCH_CUDA_ARCH_LIST","8.0;8.6;8.9;9.0;10.0;12.0+PTX")/g' setup.py; \
+\
+# same as above for JIT fallback (to avoid ImportError→JIT compile falling back to 37)
+sed -i 's/os\.environ\["TORCH_CUDA_ARCH_LIST"\] = .*/os.environ.setdefault("TORCH_CUDA_ARCH_LIST","8.0;8.6;8.9;9.0;10.0;12.0+PTX")/g' pointnet2_ops/pointnet2_utils.py; \
+\
+TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;10.0;12.0+PTX" FORCE_CUDA=1 \
+  ${ISAACSIM_ROOT_PATH}/python.sh -m pip install -v --no-build-isolation --no-deps .; \
+\
+${ISAACSIM_ROOT_PATH}/python.sh -c "import pointnet2_ops; from pointnet2_ops.pointnet2_modules import PointnetSAModule; print('pointnet2_ops OK')"
+
+
 # aliasing isaaclab.sh and python for convenience
 RUN echo "export ISAACLAB_PATH=${ISAACLAB_PATH}" >> ${DOCKER_USER_HOME}/.bashrc && \
     echo "alias isaaclab=${ISAACLAB_PATH}/isaaclab.sh" >> ${DOCKER_USER_HOME}/.bashrc && \
