@@ -50,6 +50,9 @@ for arg in "$@"; do
         -i|--install)
             "$python_exe" -m pip install -e \
                 "$ISAACLAB_PATH/source/custom/rsl_rl"
+
+            "$python_exe" -m pip install -e \
+                "$ISAACLAB_PATH/source/custom/CollisionAwareReaching/source/rl_reach"
             break
             ;;
     esac

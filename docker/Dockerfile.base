@@ -101,6 +101,9 @@ RUN touch /bin/nvidia-smi && \
     mkdir -p /var/run/nvidia-persistenced && \
     touch /var/run/nvidia-persistenced/socket
 
+# Install toml dependency
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install toml debugpy
+
 RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
     ${ISAACLAB_PATH}/isaaclab.sh --install
 
