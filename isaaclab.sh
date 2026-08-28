@@ -609,6 +609,17 @@ while [[ $# -gt 0 ]]; do
             # can prevent that from happening
             ensure_cuda_torch
 
+            # install custom editable packages after all other Python packages
+            echo "[INFO] Installing custom/rsl_rl..."
+            test -d "${ISAACLAB_PATH}/source/custom/rsl_rl"
+            "${python_exe}" -m pip install -e \
+                "${ISAACLAB_PATH}/source/custom/rsl_rl"
+
+            echo "[INFO] Installing CollisionAwareReaching/rl_reach..."
+            test -d "${ISAACLAB_PATH}/source/custom/CollisionAwareReaching/source/rl_reach"
+            "${python_exe}" -m pip install -e \
+                "${ISAACLAB_PATH}/source/custom/CollisionAwareReaching/source/rl_reach"
+
             # restore LD_PRELOAD if we cleared it
             end_arm_install_sandbox
 
@@ -773,20 +784,6 @@ while [[ $# -gt 0 ]]; do
             echo "[Error] Invalid argument provided: $1"
             print_help
             exit 1
-            ;;
-    esac
-done
-
-# Install custom editable packages when running with -i/--install.
-for arg in "$@"; do
-    case "$arg" in
-        -i|--install)
-            "$python_exe" -m pip install -e \
-                "$ISAACLAB_PATH/source/custom/rsl_rl"
-
-            "$python_exe" -m pip install -e \
-                "$ISAACLAB_PATH/source/custom/CollisionAwareReaching/source/rl_reach"
-            break
             ;;
     esac
 done
