@@ -776,3 +776,17 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Install custom editable packages when running with -i/--install.
+for arg in "$@"; do
+    case "$arg" in
+        -i|--install)
+            "$python_exe" -m pip install -e \
+                "$ISAACLAB_PATH/source/custom/rsl_rl"
+
+            "$python_exe" -m pip install -e \
+                "$ISAACLAB_PATH/source/custom/CollisionAwareReaching/source/rl_reach"
+            break
+            ;;
+    esac
+done

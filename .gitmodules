@@ -1,0 +1,8 @@
+[submodule "source/custom/rsl_rl"]
+	path = source/custom/rsl_rl
+	url = git@github.com:R2D2-like/rsl_rl.git
+	branch = dev/ctsuji/car
+[submodule "source/custom/CollisionAwareReaching"]
+	path = source/custom/CollisionAwareReaching
+	url = git@github.com:R2D2-like/CollisionAwareReaching.git
+	branch = main

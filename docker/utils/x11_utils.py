@@ -113,6 +113,12 @@ def x11_check(statefile: StateFile) -> tuple[list[str], dict[str, str]] | None:
             print("\tTo enable X11 forwarding, set 'X11_FORWARDING_ENABLED=1' in '.container.cfg'.")
 
     if is_x11_forwarding_enabled == "1":
+        # If running over SSH/headless without X11 forwarding, DISPLAY may be unset.
+        # In that case, skip X11 setup to avoid crashes and invalid bind mounts.
+        if not os.environ.get("DISPLAY"):
+            print("[INFO] DISPLAY is not set. Skipping X11 setup (headless/SSH mode).")
+            return None
+        
         x11_envars = configure_x11(statefile)
         # If X11 forwarding is enabled, return the proper args to
         # compose the x11.yaml file. Else, return an empty string.
@@ -201,6 +207,11 @@ def x11_refresh(statefile: StateFile):
 
     # check if X11 forwarding is enabled
     is_x11_forwarding_enabled = statefile.get_variable("X11_FORWARDING_ENABLED")
+    # If running headless/SSH without DISPLAY, do nothing.
+    if is_x11_forwarding_enabled == "1" and not os.environ.get("DISPLAY"):
+        print("[INFO] DISPLAY is not set. Skipping X11 refresh (headless/SSH mode).")
+        return
+    
     # load the value of the temporary xauth file
     tmp_xauth_value = statefile.get_variable("__ISAACLAB_TMP_XAUTH")
 
