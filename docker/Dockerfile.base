@@ -183,7 +183,8 @@ rtree \
 triangle \
 termcolor \
 meshcat \
-kornia
+kornia \
+ikfast-pybind-tmp==0.1.2
 
 ############################################################
 # Build tools required by ikfast-pybind / pointnet2_ops
