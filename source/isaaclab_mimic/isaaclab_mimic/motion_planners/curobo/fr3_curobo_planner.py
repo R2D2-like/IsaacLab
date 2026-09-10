@@ -409,6 +409,7 @@ class FR3CuroboPlanner(MotionPlannerBase):
         in update_world() to maintain performance.
         """
         env_prim_path = f"/World/envs/env_{self.env_id}"
+        env_contents_path = f"{env_prim_path}/"
         robot_prim_path = self.config.robot_prim_path or f"{env_prim_path}/Robot"
         # print('robot_prim_path:', robot_prim_path)
 
@@ -421,7 +422,8 @@ class FR3CuroboPlanner(MotionPlannerBase):
         # print("World geometry ignore list:", ignore_list)
 
         self._static_world_config = self.usd_helper.get_obstacles_from_stage(
-            only_paths=[env_prim_path],
+            # only_paths=[env_prim_path],
+            only_paths=[env_contents_path],
             reference_prim_path=robot_prim_path,
             ignore_substring=ignore_list,
         )
