@@ -75,6 +75,15 @@ x-default-isaac-lab-volumes: &default-isaac-lab-volumes
   - type: bind
     source: ../car_datasets
     target: ${DOCKER_ISAACLAB_PATH}/car_datasets
+  - type: bind
+    source: ../cubby_distillation_checkpoints
+    target: ${DOCKER_ISAACLAB_PATH}/cubby_distillation_checkpoints
+  - type: bind
+    source: ../cubby_mpinets_checkpoints
+    target: ${DOCKER_ISAACLAB_PATH}/cubby_mpinets_checkpoints
+  - type: bind
+    source: ../cubby_rl_checkpoints
+    target: ${DOCKER_ISAACLAB_PATH}/cubby_rl_checkpoints
 
 x-default-isaac-lab-environment: &default-isaac-lab-environment
   - ISAACSIM_PATH=${DOCKER_ISAACLAB_PATH}/_isaac_sim

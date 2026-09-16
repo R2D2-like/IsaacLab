@@ -201,6 +201,14 @@ ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --no-deps \
   git+https://github.com/fishbotics/robofin.git@v0.0.1 \
   git+https://github.com/fishbotics/atob@v0.0.1
 
+# Replace Isaac Sim's stale cuDNN 9.2.4 binaries with the version
+# required by PyTorch 2.7.0+cu128.
+RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+${ISAACLAB_PATH}/isaaclab.sh -p -m pip install \
+  --force-reinstall \
+  --no-deps \
+  nvidia-cudnn-cu12==9.7.1.26
+
 ############################################################
 # pointnet2_ops (patch compute_37 for CUDA 12.8)
 ############################################################

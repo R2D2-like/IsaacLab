@@ -76,5 +76,11 @@ tests/
 
 logs/*
 car_datasets/*
+cubby_distillation_checkpoints/*
+cubby_mpinets_checkpoints/*
+cubby_rl_checkpoints/*
 !logs/.gitkeep
 !car_datasets/.gitkeep
+!cubby_distillation_checkpoints/.gitkeep
+!cubby_mpinets_checkpoints/.gitkeep
+!cubby_rl_checkpoints/.gitkeep

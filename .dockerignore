@@ -28,3 +28,8 @@ _isaac_sim
 docker/.isaac-lab-docker-history
 # ignore uv environment
 env_isaaclab
+car_datasets/
+cubby_distillation_checkpoints/
+cubby_mpinets_checkpoints/
+cubby_rl_checkpoints/
+logs/
