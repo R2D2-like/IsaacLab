@@ -23,6 +23,10 @@ class MultiMeshRayCasterCameraCfg(RayCasterCameraCfg, MultiMeshRayCasterCfg):
 
     class_type: type = MultiMeshRayCasterCamera
 
+    self_occlusion_num_robot_targets: int = 0
+    self_occlusion_num_obstacle_targets: int = 0
+    self_occlusion_debug: bool = False
+
     def __post_init__(self):
         super().__post_init__()
 

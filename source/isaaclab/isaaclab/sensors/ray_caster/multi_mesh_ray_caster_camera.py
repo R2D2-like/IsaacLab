@@ -57,6 +57,16 @@ class MultiMeshRayCasterCamera(RayCasterCamera, MultiMeshRayCaster):
         # create empty variables for storing output data
         self._data = MultiMeshRayCasterCameraData()
 
+        self.ray_mesh_ids = None
+        self.num_robot_targets = int(getattr(cfg, "self_occlusion_num_robot_targets", 0))
+        self.num_obstacle_targets = int(getattr(cfg, "self_occlusion_num_obstacle_targets", 0))
+        self.robot_mesh_id_ranges = []
+        self.obstacle_mesh_id_ranges = []
+        self.has_self_occlusion_targets = False
+        self.self_occlusion_debug = bool(getattr(cfg, "self_occlusion_debug", False))
+        self._self_occlusion_debug_printed_init = False
+        self._self_occlusion_debug_counter = 0
+
     def __str__(self) -> str:
         """Returns: A string containing information about the instance."""
         return (
@@ -76,6 +86,39 @@ class MultiMeshRayCasterCamera(RayCasterCamera, MultiMeshRayCaster):
 
     def _initialize_warp_meshes(self):
         MultiMeshRayCaster._initialize_warp_meshes(self)
+
+        # Build per-env flattened mesh-id ranges from target order.
+        self.robot_mesh_id_ranges = []
+        self.obstacle_mesh_id_ranges = []
+
+        running = 0
+        for i, target_cfg in enumerate(self._raycast_targets_cfg):
+            target_expr = target_cfg.prim_expr
+            count = int(self._num_meshes_per_env[target_expr])
+            start = running
+            end = running + count
+
+            if i < self.num_robot_targets:
+                self.robot_mesh_id_ranges.append((start, end))
+            elif i < self.num_robot_targets + self.num_obstacle_targets:
+                self.obstacle_mesh_id_ranges.append((start, end))
+
+            running = end
+
+        self.has_self_occlusion_targets = (self.num_robot_targets > 0 and self.num_obstacle_targets > 0)
+        if self.self_occlusion_debug and not self._self_occlusion_debug_printed_init:
+            print(
+                "[SelfOcclusionDebug][Sensor:init] "
+                f"prim={self.cfg.prim_path} "
+                f"num_robot_targets={self.num_robot_targets} "
+                f"num_obstacle_targets={self.num_obstacle_targets} "
+                f"has_self_occlusion_targets={self.has_self_occlusion_targets} "
+                f"robot_mesh_id_ranges={self.robot_mesh_id_ranges} "
+                f"obstacle_mesh_id_ranges={self.obstacle_mesh_id_ranges} "
+                f"len(_mesh_views)={len(self._mesh_views)} "
+                f"len(_raycast_targets_cfg)={len(self._raycast_targets_cfg)}"
+            )
+            self._self_occlusion_debug_printed_init = True
 
     def _create_buffers(self):
         super()._create_buffers()
@@ -145,6 +188,15 @@ class MultiMeshRayCasterCamera(RayCasterCamera, MultiMeshRayCaster):
 
         self._frame[env_ids] += 1
 
+        # lazily allocate ray_mesh_ids buffer once num_rays/view count are known
+        if self.ray_mesh_ids is None:
+            self.ray_mesh_ids = torch.full(
+                (self._view.count, self.num_rays),
+                fill_value=-1,
+                dtype=torch.int16,
+                device=self.ray_starts.device,
+            )
+
         # Update the mesh positions and rotations
         mesh_idx = 0
         for view, target_cfg in zip(self._mesh_views, self._raycast_targets_cfg):
@@ -184,8 +236,10 @@ class MultiMeshRayCasterCamera(RayCasterCamera, MultiMeshRayCaster):
                 [name in self.cfg.data_types for name in ["distance_to_image_plane", "distance_to_camera"]]
             ),
             return_normal="normals" in self.cfg.data_types,
-            return_mesh_id=self.cfg.update_mesh_ids,
+            return_mesh_id=True,
         )
+
+        self.ray_mesh_ids[env_ids] = ray_mesh_ids
 
         # update output buffers
         if "distance_to_image_plane" in self.cfg.data_types:
