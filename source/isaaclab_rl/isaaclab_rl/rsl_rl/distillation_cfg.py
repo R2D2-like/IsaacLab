@@ -42,6 +42,11 @@ class RslRlDistillationAlgorithmCfg:
     loss_type: Literal["mse", "huber"] = "mse"
     """The loss type to use for the student policy. Defaults to mse."""
 
+    loss_target_scaling=0.005
+
+    scheduler="cos"
+    scheduler_t_max=10000
+    scheduler_eta_min=1.0e-4
 
 #########################
 # Runner configurations #

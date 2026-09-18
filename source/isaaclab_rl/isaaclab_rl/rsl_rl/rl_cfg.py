@@ -220,7 +220,21 @@ class RslRlPpoAlgorithmCfg:
     symmetry_cfg: RslRlSymmetryCfg | None = None
     """The symmetry configuration. Defaults to None, in which case symmetry is not used."""
 
+    actor_learning_rate=3.0e-6
+    critic_learning_rate=1.0e-5
+    actor_max_grad_norm=0.5
+    critic_max_grad_norm=1.0
 
+    use_teacher_huber_loss=True
+    teacher_loss_type="huber"
+    teacher_huber_loss_weight_start=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    teacher_huber_loss_weight_end=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    huber_loss_start_iters=0
+    huber_loss_saturate_iters=0
+    teacher_huber_loss_weight_schedule="fixed"
+    teacher_loss_target_scaling=0.005
+    freeze_actor_iterations=250
+    
 #########################
 # Runner configurations #
 #########################
