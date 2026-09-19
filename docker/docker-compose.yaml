@@ -73,8 +73,8 @@ x-default-isaac-lab-volumes: &default-isaac-lab-volumes
     source: ../logs
     target: ${DOCKER_ISAACLAB_PATH}/logs
   - type: bind
-    source: ../car_datasets
-    target: ${DOCKER_ISAACLAB_PATH}/car_datasets
+    source: ../cubby_datasets
+    target: ${DOCKER_ISAACLAB_PATH}/cubby_datasets
   - type: bind
     source: ../cubby_distillation_checkpoints
     target: ${DOCKER_ISAACLAB_PATH}/cubby_distillation_checkpoints

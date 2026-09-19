@@ -128,6 +128,9 @@ ENV CUDA_HOME=/usr/local/cuda-12.8
 ENV PATH=${CUDA_HOME}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
+# Make CollisionAwareReaching/scripts importable
+ENV PYTHONPATH=${ISAACLAB_PATH}/source/custom/CollisionAwareReaching:${PYTHONPATH}
+
 RUN test -x "${CUDA_HOME}/bin/nvcc" && \
     "${CUDA_HOME}/bin/nvcc" --version
 
